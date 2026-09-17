@@ -20,7 +20,19 @@ const uploadResume = async (req, res) => {
     const jobDescription = req.body.jobDescription || "";
     const analysis = analyzeResume(data.text, jobDescription);
 
-    const aiAnalysis = await analyzeResumeWithAI(data.text);
+    // AI analysis is optional in production.
+    // If Ollama is unavailable, continue with ATS analysis.
+    let aiAnalysis = {
+      strengths: [],
+      weaknesses: [],
+      suggestions: [],
+    };
+
+    try {
+      aiAnalysis = await analyzeResumeWithAI(data.text);
+    } catch (error) {
+      console.error("AI resume analysis unavailable:", error.message);
+    }
 
     const savedResume = await Resume.create({
       user: req.userId,
