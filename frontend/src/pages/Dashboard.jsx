@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -40,14 +41,11 @@ function Dashboard() {
       }
 
       try {
-        const response = await fetch(
-          "http://localhost:5000/api/users/resumes",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const response = await fetch(`${API_URL}/api/users/resumes`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
 
         const data = await response.json();
 
@@ -82,7 +80,7 @@ function Dashboard() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/users/upload", {
+      const response = await fetch(`${API_URL}/api/users/upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -128,19 +126,16 @@ function Dashboard() {
 
       const token = localStorage.getItem("token");
 
-      const response = await fetch(
-        "http://localhost:5000/api/users/improve-bullet",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            bulletPoint: bulletPoint.trim(),
-          }),
+      const response = await fetch(`${API_URL}/api/users/improve-bullet`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          bulletPoint: bulletPoint.trim(),
+        }),
+      });
 
       const data = await response.json();
 
@@ -179,20 +174,17 @@ function Dashboard() {
     setError("");
 
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/users/match-job",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            resumeId,
-            jobDescription,
-          }),
+      const response = await fetch(`${API_URL}/api/users/match-job`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          resumeId,
+          jobDescription,
+        }),
+      });
 
       const data = await response.json();
 
@@ -220,14 +212,11 @@ function Dashboard() {
     setError("");
 
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/users/resumes/${resumeId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await fetch(`${API_URL}/api/users/resumes/${resumeId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       const data = await response.json();
 
