@@ -193,7 +193,20 @@ function Dashboard() {
         return;
       }
 
+      // Show the job match result
       setJobMatch(data);
+
+      // Update Resume History immediately
+      setHistory((previousHistory) =>
+        previousHistory.map((resume) =>
+          resume._id === resumeId
+            ? {
+                ...resume,
+                matchPercentage: data.matchPercentage,
+              }
+            : resume,
+        ),
+      );
     } catch (error) {
       setError("Unable to connect to the server.");
     } finally {
