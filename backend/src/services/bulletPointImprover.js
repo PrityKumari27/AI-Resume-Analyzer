@@ -29,7 +29,7 @@ STRICT RULES:
       },
       body: JSON.stringify({
         model: "llama3.2:3b",
-        prompt: prompt,
+        prompt,
         stream: false,
       }),
     });
@@ -40,10 +40,17 @@ STRICT RULES:
 
     const data = await response.json();
 
+    if (!data.response || !data.response.trim()) {
+      throw new Error("Ollama returned an empty response");
+    }
+
     let improvedBullet = data.response.trim();
 
-    // Remove quotation marks if the model adds them
     improvedBullet = improvedBullet.replace(/^["']|["']$/g, "");
+
+    if (!improvedBullet) {
+      throw new Error("Improved bullet point is empty");
+    }
 
     return improvedBullet;
   } catch (error) {
