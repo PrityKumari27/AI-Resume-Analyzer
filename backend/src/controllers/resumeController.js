@@ -183,17 +183,29 @@ const improveBullet = async (req, res) => {
       });
     }
 
-    const improvedBullet = await improveBulletPoint(bulletPoint.trim());
+    try {
+      const improvedBullet = await improveBulletPoint(bulletPoint.trim());
 
-    res.status(200).json({
-      success: true,
-      originalBullet: bulletPoint.trim(),
-      improvedBullet,
-    });
+      return res.status(200).json({
+        success: true,
+        available: true,
+        originalBullet: bulletPoint.trim(),
+        improvedBullet,
+      });
+    } catch (error) {
+      console.error("AI bullet improvement unavailable:", error.message);
+
+      return res.status(200).json({
+        success: false,
+        available: false,
+        message:
+          "AI bullet point improvement is currently unavailable. Please try again later.",
+      });
+    }
   } catch (error) {
-    console.error("Bullet improvement failed:", error.message);
+    console.error("Bullet improvement error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to improve bullet point",
     });
