@@ -182,7 +182,7 @@ function Dashboard() {
         },
         body: JSON.stringify({
           resumeId,
-          jobDescription,
+          jobDescription: jobDescription.trim(),
         }),
       });
 
@@ -193,21 +193,35 @@ function Dashboard() {
         return;
       }
 
-      // Show the job match result
+      // Update Job Match Result immediately
       setJobMatch(data);
 
-      // Update Resume History immediately
-      setHistory((previousHistory) =>
-        previousHistory.map((resume) =>
-          resume._id === resumeId
-            ? {
-                ...resume,
-                matchPercentage: data.matchPercentage,
-              }
-            : resume,
-        ),
-      );
+      // Fetch the latest history from backend
+      const historyResponse = await fetch(`${API_URL}/api/users/resumes`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const historyData = await historyResponse.json();
+
+      if (historyResponse.ok && Array.isArray(historyData.resumes)) {
+        setHistory(historyData.resumes);
+      } else {
+        // Fallback: update the current resume locally
+        setHistory((previousHistory) =>
+          previousHistory.map((resume) =>
+            String(resume._id) === String(resumeId)
+              ? {
+                  ...resume,
+                  matchPercentage: data.matchPercentage,
+                }
+              : resume,
+          ),
+        );
+      }
     } catch (error) {
+      console.error("Job matching failed:", error);
       setError("Unable to connect to the server.");
     } finally {
       setMatching(false);
