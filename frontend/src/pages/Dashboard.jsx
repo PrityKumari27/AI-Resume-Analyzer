@@ -22,6 +22,7 @@ function Dashboard() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [matching, setMatching] = useState(false);
+  const [bulletError, setBulletError] = useState("");
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -123,12 +124,12 @@ function Dashboard() {
     try {
       setImprovingBullet(true);
       setImprovedBullet("");
-      setError("");
+      setBulletError("");
 
       const token = localStorage.getItem("token");
 
       if (!token) {
-        setError("Please login again.");
+        setBulletError("Please login again.");
         return;
       }
 
@@ -147,11 +148,11 @@ function Dashboard() {
 
       if (!response.ok) {
         if (response.status === 500) {
-          setError(
+          setBulletError(
             "AI bullet point improvement is currently unavailable. Please try again later.",
           );
         } else {
-          setError(data.message || "Failed to improve bullet point.");
+          setBulletError(data.message || "Failed to improve bullet point.");
         }
 
         return;
@@ -159,7 +160,7 @@ function Dashboard() {
 
       setImprovedBullet(data.improvedBullet);
     } catch (error) {
-      setError(
+      setBulletError(
         "AI bullet point improvement is currently unavailable. Please try again later.",
       );
     } finally {
@@ -524,6 +525,8 @@ function Dashboard() {
           >
             {improvingBullet ? "Improving..." : "Improve with AI"}
           </button>
+
+          {bulletError && <p className="error-message">{bulletError}</p>}
 
           {improvedBullet && (
             <div className="improved-bullet">
