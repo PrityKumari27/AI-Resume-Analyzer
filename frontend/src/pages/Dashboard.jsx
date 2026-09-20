@@ -123,8 +123,14 @@ function Dashboard() {
     try {
       setImprovingBullet(true);
       setImprovedBullet("");
+      setError("");
 
       const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Please login again.");
+        return;
+      }
 
       const response = await fetch(`${API_URL}/api/users/improve-bullet`, {
         method: "POST",
@@ -140,13 +146,22 @@ function Dashboard() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to improve bullet point");
+        if (response.status === 500) {
+          setError(
+            "AI bullet point improvement is currently unavailable. Please try again later.",
+          );
+        } else {
+          setError(data.message || "Failed to improve bullet point.");
+        }
+
+        return;
       }
 
       setImprovedBullet(data.improvedBullet);
     } catch (error) {
-      console.error("Bullet improvement failed:", error.message);
-      setImprovedBullet("");
+      setError(
+        "AI bullet point improvement is currently unavailable. Please try again later.",
+      );
     } finally {
       setImprovingBullet(false);
     }
