@@ -146,15 +146,11 @@ function Dashboard() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        if (response.status === 500) {
-          setBulletError(
+      if (!response.ok || !data.success) {
+        setBulletError(
+          data.message ||
             "AI bullet point improvement is currently unavailable. Please try again later.",
-          );
-        } else {
-          setBulletError(data.message || "Failed to improve bullet point.");
-        }
-
+        );
         return;
       }
 
