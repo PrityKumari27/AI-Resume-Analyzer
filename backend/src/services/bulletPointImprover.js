@@ -22,6 +22,58 @@ STRICT RULES:
 `;
 
   try {
+    // Production: use Gemini API
+    if (process.env.GEMINI_API_KEY) {
+      const response = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": process.env.GEMINI_API_KEY,
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt,
+                  },
+                ],
+              },
+            ],
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+
+        throw new Error(
+          `Gemini request failed: ${response.status} ${errorText}`,
+        );
+      }
+
+      const data = await response.json();
+
+      const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!generatedText || !generatedText.trim()) {
+        throw new Error("Gemini returned an empty response");
+      }
+
+      let improvedBullet = generatedText.trim();
+
+      improvedBullet = improvedBullet.replace(/^["']|["']$/g, "");
+
+      if (!improvedBullet) {
+        throw new Error("Improved bullet point is empty");
+      }
+
+      return improvedBullet;
+    }
+
+    // Local development: use Ollama
     const response = await fetch("http://localhost:11434/api/generate", {
       method: "POST",
       headers: {
