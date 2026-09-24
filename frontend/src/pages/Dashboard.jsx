@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 function Dashboard() {
   const navigate = useNavigate();
+
   const [file, setFile] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [bulletPoint, setBulletPoint] = useState("");
@@ -12,7 +14,10 @@ function Dashboard() {
   const [history, setHistory] = useState([]);
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+
   const analysisRef = useRef(null);
+  const jobMatchRef = useRef(null);
+
   const [selectedResumeId, setSelectedResumeId] = useState(null);
   const [resumeId, setResumeId] = useState(null);
 
@@ -28,6 +33,7 @@ function Dashboard() {
     setFile(event.target.files[0]);
     setError("");
   };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
@@ -60,6 +66,21 @@ function Dashboard() {
 
     fetchHistory();
   }, []);
+
+  useEffect(() => {
+    if (!jobMatch) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      jobMatchRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [jobMatch]);
 
   const handleUpload = async () => {
     if (!file) {
@@ -98,6 +119,7 @@ function Dashboard() {
 
       setAnalysis(data.analysis);
       setAiAnalysis(data.aiAnalysis);
+
       setHistory((previousHistory) => [
         {
           _id: data.resumeId,
@@ -107,6 +129,7 @@ function Dashboard() {
         },
         ...previousHistory,
       ]);
+
       setResumeId(data.resumeId);
       setJobMatch(null);
     } catch (error) {
@@ -205,10 +228,8 @@ function Dashboard() {
         return;
       }
 
-      // Update Job Match Result immediately
       setJobMatch(data);
 
-      // Fetch the latest history from backend
       const historyResponse = await fetch(`${API_URL}/api/users/resumes`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -220,7 +241,6 @@ function Dashboard() {
       if (historyResponse.ok && Array.isArray(historyData.resumes)) {
         setHistory(historyData.resumes);
       } else {
-        // Fallback: update the current resume locally
         setHistory((previousHistory) =>
           previousHistory.map((resume) =>
             String(resume._id) === String(resumeId)
@@ -432,7 +452,7 @@ function Dashboard() {
         )}
 
         {jobMatch && (
-          <div className="history-section">
+          <div ref={jobMatchRef} className="history-section job-match-result">
             <h2>Job Match Result</h2>
 
             <div className="match-score">
