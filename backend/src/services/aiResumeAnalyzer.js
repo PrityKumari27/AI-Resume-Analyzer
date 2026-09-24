@@ -36,109 +36,47 @@ Rules:
 `;
 
   try {
-    // Production: use Gemini API
-    if (process.env.GEMINI_API_KEY) {
-      const maxAttempts = 3;
-      let lastError;
-
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-          const response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": process.env.GEMINI_API_KEY,
+    // Production: use OpenRouter free models
+    if (process.env.OPENROUTER_API_KEY) {
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "openrouter/free",
+            messages: [
+              {
+                role: "user",
+                content: prompt,
               },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
-                      {
-                        text: prompt,
-                      },
-                    ],
-                  },
-                ],
-                generationConfig: {
-                  responseMimeType: "application/json",
-                  responseSchema: {
-                    type: "OBJECT",
-                    properties: {
-                      strengths: {
-                        type: "ARRAY",
-                        items: {
-                          type: "STRING",
-                        },
-                      },
-                      weaknesses: {
-                        type: "ARRAY",
-                        items: {
-                          type: "STRING",
-                        },
-                      },
-                      suggestions: {
-                        type: "ARRAY",
-                        items: {
-                          type: "STRING",
-                        },
-                      },
-                    },
-                    required: ["strengths", "weaknesses", "suggestions"],
-                  },
-                },
-              }),
+            ],
+            response_format: {
+              type: "json_object",
             },
-          );
+          }),
+        },
+      );
 
-          if (!response.ok) {
-            const errorText = await response.text();
-
-            // Retry temporary Gemini errors
-            if (
-              (response.status === 503 || response.status === 429) &&
-              attempt < maxAttempts
-            ) {
-              console.log(
-                `Gemini temporarily unavailable. Retrying... (${attempt}/${maxAttempts})`,
-              );
-
-              await new Promise((resolve) =>
-                setTimeout(resolve, attempt * 2000),
-              );
-
-              continue;
-            }
-
-            throw new Error(
-              `Gemini request failed: ${response.status} ${errorText}`,
-            );
-          }
-
-          const data = await response.json();
-
-          const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-          if (!generatedText || !generatedText.trim()) {
-            throw new Error("Gemini returned an empty response");
-          }
-
-          return JSON.parse(generatedText);
-        } catch (error) {
-          lastError = error;
-
-          if (attempt < maxAttempts) {
-            console.log(
-              `Gemini request attempt ${attempt} failed. Retrying...`,
-            );
-
-            await new Promise((resolve) => setTimeout(resolve, attempt * 2000));
-          }
-        }
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `OpenRouter request failed: ${response.status} ${errorText}`,
+        );
       }
 
-      throw lastError;
+      const data = await response.json();
+
+      const generatedText = data.choices?.[0]?.message?.content;
+
+      if (!generatedText) {
+        throw new Error("OpenRouter returned an empty response");
+      }
+
+      return JSON.parse(generatedText);
     }
 
     // Local development: use Ollama
@@ -164,6 +102,8 @@ Rules:
     return JSON.parse(data.response);
   } catch (error) {
     console.error("AI resume analysis failed:", error.message);
+    console.error("Error cause:", error.cause);
+    console.error("Error stack:", error.stack);
     throw error;
   }
 };

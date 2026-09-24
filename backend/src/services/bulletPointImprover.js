@@ -1,111 +1,78 @@
 const improveBulletPoint = async (bulletPoint) => {
   const prompt = `
-You are a resume bullet point editor.
+You are an expert resume writer.
 
-Your task is to rewrite the user's resume bullet point professionally.
+Improve the following resume bullet point for a software engineering resume.
 
 Original bullet point:
 ${bulletPoint}
 
-STRICT RULES:
-1. Return ONLY ONE rewritten resume bullet point.
-2. Do NOT provide explanations.
-3. Do NOT describe what you changed.
-4. Do NOT use phrases like "Here's the improved bullet point".
-5. Do NOT add notes, comments, or alternatives.
-6. Keep the exact original meaning.
-7. Do NOT invent technologies, tools, numbers, achievements, results, or responsibilities.
-8. Only use technologies and facts explicitly mentioned in the original bullet point.
-9. Use a strong professional action verb where appropriate.
-10. Keep the bullet concise.
-11. Return plain text only.
+Rules:
+- Keep the original meaning.
+- Do not invent metrics, technologies, achievements, or responsibilities.
+- Make it concise and professional.
+- Use a strong action verb.
+- Improve clarity and impact.
+- Return ONLY the final improved bullet point.
+- Do not explain your changes.
+- Do not provide notes, reasoning, or commentary.
+- Do not use labels such as "Improved bullet point:".
+- Output exactly one sentence.
 `;
 
   try {
-    // Production: use Gemini API
-    if (process.env.GEMINI_API_KEY) {
-      const maxAttempts = 3;
-      let lastError;
-
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-          const response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": process.env.GEMINI_API_KEY,
+    // Production: use OpenRouter free models
+    if (process.env.OPENROUTER_API_KEY) {
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "openrouter/free",
+            messages: [
+              {
+                role: "user",
+                content: prompt,
               },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
-                      {
-                        text: prompt,
-                      },
-                    ],
-                  },
-                ],
-              }),
-            },
-          );
+            ],
+          }),
+        },
+      );
 
-          if (!response.ok) {
-            const errorText = await response.text();
+      if (!response.ok) {
+        const errorText = await response.text();
 
-            // Retry temporary Gemini errors
-            if (
-              (response.status === 503 || response.status === 429) &&
-              attempt < maxAttempts
-            ) {
-              console.log(
-                `Gemini temporarily unavailable. Retrying... (${attempt}/${maxAttempts})`,
-              );
-
-              await new Promise((resolve) =>
-                setTimeout(resolve, attempt * 2000),
-              );
-
-              continue;
-            }
-
-            throw new Error(
-              `Gemini request failed: ${response.status} ${errorText}`,
-            );
-          }
-
-          const data = await response.json();
-
-          const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-          if (!generatedText || !generatedText.trim()) {
-            throw new Error("Gemini returned an empty response");
-          }
-
-          let improvedBullet = generatedText.trim();
-
-          improvedBullet = improvedBullet.replace(/^["']|["']$/g, "");
-
-          if (!improvedBullet) {
-            throw new Error("Improved bullet point is empty");
-          }
-
-          return improvedBullet;
-        } catch (error) {
-          lastError = error;
-
-          if (attempt < maxAttempts) {
-            console.log(
-              `Gemini request attempt ${attempt} failed. Retrying...`,
-            );
-
-            await new Promise((resolve) => setTimeout(resolve, attempt * 2000));
-          }
-        }
+        throw new Error(
+          `OpenRouter request failed: ${response.status} ${errorText}`,
+        );
       }
 
-      throw lastError;
+      const data = await response.json();
+
+      let improvedBullet = data.choices?.[0]?.message?.content?.trim();
+
+      if (!improvedBullet) {
+        throw new Error("OpenRouter returned an empty response");
+      }
+
+      // Remove common explanation prefixes
+      improvedBullet = improvedBullet
+        .replace(/^Improved bullet point:\s*/i, "")
+        .trim();
+
+      // Keep only the first paragraph if the model adds extra explanation
+      improvedBullet = improvedBullet.split(/\n\s*\n/)[0].trim();
+
+      // Remove surrounding quotes
+      if (improvedBullet.startsWith('"') && improvedBullet.endsWith('"')) {
+        improvedBullet = improvedBullet.slice(1, -1).trim();
+      }
+
+      return improvedBullet;
     }
 
     // Local development: use Ollama
@@ -116,7 +83,7 @@ STRICT RULES:
       },
       body: JSON.stringify({
         model: "llama3.2:3b",
-        prompt,
+        prompt: prompt,
         stream: false,
       }),
     });
@@ -127,22 +94,9 @@ STRICT RULES:
 
     const data = await response.json();
 
-    if (!data.response || !data.response.trim()) {
-      throw new Error("Ollama returned an empty response");
-    }
-
-    let improvedBullet = data.response.trim();
-
-    improvedBullet = improvedBullet.replace(/^["']|["']$/g, "");
-
-    if (!improvedBullet) {
-      throw new Error("Improved bullet point is empty");
-    }
-
-    return improvedBullet;
+    return data.response.trim();
   } catch (error) {
     console.error("Bullet point improvement failed:", error.message);
-
     throw error;
   }
 };
