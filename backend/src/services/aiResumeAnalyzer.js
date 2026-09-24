@@ -48,6 +48,11 @@ Rules:
           },
           body: JSON.stringify({
             model: "google/gemma-4-31b-it:free",
+            models: [
+              "google/gemma-4-31b-it:free",
+              "qwen/qwen3.8-27b:free",
+              "openrouter/free",
+            ],
             messages: [
               {
                 role: "user",
