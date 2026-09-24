@@ -849,24 +849,27 @@ body {
   background: #ffffff;
   border: 1px solid #eadde2;
   border-radius: 10px;
+  text-align: left !important;
 }
 
 .ai-feedback-card h3 {
   margin: 0 0 16px;
   color: #581c36;
   font-size: 17px;
+  text-align: center;
 }
 
 .ai-feedback-card ul {
   margin: 0;
-  padding-left: 20px;
+  padding-left: 22px;
 }
 
 .ai-feedback-card li {
-  margin-bottom: 12px;
-  color: #52525b;
+  margin-bottom: 18px;
+  color: #52525a;
   font-size: 14px;
   line-height: 1.6;
+  text-align: left !important;
 }
 
 /* =========================
